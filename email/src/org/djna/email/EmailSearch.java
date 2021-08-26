@@ -1,10 +1,14 @@
 package org.djna.email;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EmailSearch {
 
@@ -27,17 +31,32 @@ public class EmailSearch {
 
         String contents = Files.readString(filePath);
 
-        String lookFor = "@softwire.com";
+        String regex = "\\S+@((?:\\w+\\.)+\\w+)\\s*";
+        Pattern emailPattern = Pattern.compile(regex);
+        Matcher m = emailPattern.matcher(contents);
 
-        for ( int start = 0, end = lookFor.length() ; end < contents.length() ;  start++, end++) {
-            String candidate = contents.substring(start, end );
-
-            if ( lookFor.equals(  candidate ) )  {
-                counter++;
+        Map<String, Integer> domainMap = new HashMap<String, Integer>();
+        while( m.find() ) {
+            String domain = m.group(1);
+            Integer domainCount = domainMap.get(domain);
+            if ( domainCount == null){
+                domainCount = 0;
             }
+            domainCount++;
+            domainMap.put(domain, domainCount);
+            counter++;
         }
 
-        System.out.printf("Found %s %d times", lookFor, counter);
+        for ( String domain: domainMap.keySet() ){
+            StringBuffer stringBuffer = new StringBuffer("Domain ");
+            stringBuffer.append(domain);
+            stringBuffer.append(": ");
+            stringBuffer.append(domainMap.get(domain));
+            System.out.println(stringBuffer.toString());
+        }
+
+        System.out.printf("Found %s %d times", regex, counter);
+
     }
 
 
